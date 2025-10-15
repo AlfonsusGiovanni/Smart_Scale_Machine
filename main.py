@@ -1,10 +1,13 @@
 import customtkinter as ctk
+import tkinter as tk
 import time
 import datetime
+import random
 from tkinter import messagebox
-from lib import printer_handler as prhd
-from lib import product_control as pctl
-from lib import serial_handler as sr
+from automatic_scale_machine import printer_handler as prhd
+from automatic_scale_machine import product_control as pctl
+from automatic_scale_machine import serial_handler as sr
+from automatic_scale_machine import weight_rounder as wr
 
 # Set Appearance Mode
 ctk.set_appearance_mode("light")
@@ -160,15 +163,22 @@ class Left_Frame(ctk.CTkFrame):
 
         # Left frame variable
         self.menu_frame = menu_frame
+        self.max_sheet = 4
+        self.max_row = 500
+        self.max_column = 5
 
         self.current_sheet = ""
-        self.sheet_count = 0
+        self.sheet_num = 0
+        self.current_sheet_num = 0
         self.deleted_sheet = ""
 
         self.sheet_table = {}
         self.sheet_info_frame = {}
+        self.info_frame1 = {}
+        self.info_frame2 = {}
+        self.info_frame3 = {}
         self.sheet_cust_name = {}
-        self.sheet_cell = [[0]*5 for _ in range(500)]
+        self.sheet_cell = [[[0]*self.max_column for r in range(self.max_row)] for s in range(self.max_sheet)]
 
         self.column_width = [50, 125, 100, 100, 125]
 
@@ -191,74 +201,74 @@ class Left_Frame(ctk.CTkFrame):
 
     # Create new sheet function
     def create_new_sheet(self):
-        self.sheet_count += 1
-        sheet_name = f"Sheet{self.sheet_count}"
+        self.sheet_num += 1
+        sheet_name = f"Sheet{self.sheet_num}"
     
-        if self.sheet_count <= 4:
+        if self.sheet_num <= 4:
             tab = self.sheet_tab.add(sheet_name)
-            self.sheet_tab.move(self.sheet_count-1, sheet_name)
+            self.sheet_tab.move(self.sheet_num-1, sheet_name)
 
             # Add scrollable frame
-            self.sheet_table[self.sheet_count] = ctk.CTkScrollableFrame(
+            self.sheet_table[self.sheet_num] = ctk.CTkScrollableFrame(
                 tab,
                 height=350,
                 fg_color="white",
                 corner_radius=10
             )
-            self.sheet_table[self.sheet_count].pack(side="top", fill="x", padx=(5,5), pady=(5,0))
-            self.sheet_table[self.sheet_count].pack_propagate(False)
+            self.sheet_table[self.sheet_num].pack(side="top", fill="x", padx=(5,5), pady=(5,0))
+            self.sheet_table[self.sheet_num].pack_propagate(False)
 
             # Add table tittle (num)
-            self.sheet_num_title = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+            self.column_num_title = ctk.CTkLabel(
+                self.sheet_table[self.sheet_num],
                 height=40, width=self.column_width[0],
                 fg_color="gray75",
                 font=("Arial", 14, "bold"),
                 text="No",
                 text_color="black"
             )
-            self.sheet_num_title.grid(row=0, column=0, padx=(0,5))
+            self.column_num_title.grid(row=0, column=0, padx=(0,5))
 
             # Add table tittle (timestamp)
-            self.sheet_time_title = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+            self.column_time_title = ctk.CTkLabel(
+                self.sheet_table[self.sheet_num],
                 height=40, width=self.column_width[1],
                 fg_color="gray75",
                 font=("Arial", 14, "bold"),
                 text="Product Name",
                 text_color="black"
             )
-            self.sheet_time_title.grid(row=0, column=1, padx=(0,5))
+            self.column_time_title.grid(row=0, column=1, padx=(0,5))
 
             # Add table tittle (product)
-            self.sheet_product_title = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+            self.column_product_title = ctk.CTkLabel(
+                self.sheet_table[self.sheet_num],
                 height=40, width=self.column_width[2],
                 fg_color="gray75",
                 font=("Arial", 14, "bold"),
-                text="Price\n(Rp)",
+                text="Price / Kg\n(Rp)",
                 text_color="black"
             )
-            self.sheet_product_title.grid(row=0, column=2, padx=(0,5))
+            self.column_product_title.grid(row=0, column=2, padx=(0,5))
 
             # Add table title (real weight)
-            self.sheet_weight_title = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+            self.column_weight_title = ctk.CTkLabel(
+                self.sheet_table[self.sheet_num],
                 height=40, width=self.column_width[3],
                 fg_color="gray75",
                 font=("Arial", 14, "bold"),
                 text="Weight\n(Kg)",
                 text_color="black"
             )
-            self.sheet_weight_title.grid(row=0, column=3, padx=(0,5))
+            self.column_weight_title.grid(row=0, column=3, padx=(0,5))
 
             # Add table title (rounded weight)
             self.sheet_roundedweight_title = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+                self.sheet_table[self.sheet_num],
                 height=40, width=self.column_width[4],
                 fg_color="gray75",
                 font=("Arial", 14, "bold"),
-                text="Total\nPrice",
+                text="Sub Price\n(Rp)",
                 text_color="black"
             )
             self.sheet_roundedweight_title.grid(row=0, column=4, padx=(0,5))
@@ -266,32 +276,91 @@ class Left_Frame(ctk.CTkFrame):
             # Add starter sheet cell
             for i in range(0, self.starting_row):
                 for j in range(0, self.total_column):
-                    self.sheet_cell[i][j] = ctk.CTkLabel(
-                        self.sheet_table[self.sheet_count],
+                    self.sheet_cell[self.sheet_num][i][j] = ctk.CTkLabel(
+                        self.sheet_table[self.sheet_num],
                         height=25, width=self.column_width[j],
                         fg_color="gray90",
                         font=("Arial", 14),
                         text="",
                         text_color="black"
                     )
-                    self.sheet_cell[i][j].grid(row=i+1, column=j, padx=(0,5), pady=(5,0))
-                self.sheet_cell[i][0].configure(text=f"{i+1}")
+                    self.sheet_cell[self.sheet_num][i][j].grid(row=i+1, column=j, padx=(0,5), pady=(5,0))
+                self.sheet_cell[self.sheet_num][i][0].configure(text=f"{i+1}")
             
             # Add sheet data information frame
-            self.sheet_info_frame[self.sheet_count] = ctk.CTkFrame(
+            self.sheet_info_frame[self.sheet_num] = ctk.CTkFrame(
                 tab,
                 fg_color="white",
                 corner_radius=10
             )
-            self.sheet_info_frame[self.sheet_count].pack(side="top", fill="x", padx=(5,5), pady=(20,0))
+            self.sheet_info_frame[self.sheet_num].pack(side="top", fill="both", expand=True, padx=(5,5), pady=(15,5))
+
+            # Add data frame 1
+            self.info_frame1[self.sheet_num] = ctk.CTkFrame(
+                self.sheet_info_frame[self.sheet_num],
+                width=150, height=30,
+                fg_color="red",
+                corner_radius=0
+            )
+            self.info_frame1[self.sheet_num].pack(side="left", padx=(10,20))
+            self.info_frame1[self.sheet_num].pack_propagate(False)
+
+            # Add data frame 2
+            self.info_frame2[self.sheet_num] = ctk.CTkFrame(
+                self.sheet_info_frame[self.sheet_num],
+                width=150, height=30,
+                fg_color="green",
+                corner_radius=0
+            )
+            self.info_frame2[self.sheet_num].pack(side="left", padx=(0,20))
+            self.info_frame2[self.sheet_num].pack_propagate(False)
+
+            # Add data frame 3
+            self.info_frame3[self.sheet_num] = ctk.CTkFrame(
+                self.sheet_info_frame[self.sheet_num],
+                width=150, height=30,
+                fg_color="blue",
+                corner_radius=0
+            )
+            self.info_frame3[self.sheet_num].pack(side="left", padx=(0,0))
+            self.info_frame3[self.sheet_num].pack_propagate(False)
+
+            # Add product quantity information label
+            self.product_qty = ctk.CTkLabel(
+                self.info_frame1[self.sheet_num],
+                font=("Arial", 16, "bold"),
+                text="Qty:",
+                text_color="black"
+            )
+            self.product_qty.pack(side="left")
+
+            # Product total weight information label
+            self.total_weight = ctk.CTkLabel(
+                self.info_frame2[self.sheet_num],
+                font=("Arial", 16, "bold"),
+                text="Total Weight:",
+                text_color="black"
+            )
+            self.total_weight.pack(side="left")
+
+            # Product total price information label
+            self.total_price = ctk.CTkLabel(
+                self.info_frame3[self.sheet_num],
+                font=("Arial", 16, "bold"),
+                text="Total Price:",
+                text_color="black"
+            )
+            self.total_price.pack(side="left")
 
         else:
             messagebox.showinfo("Info", "Sheet Limit!")
+        
+        self.update_sheet()
 
     # Delete sheet function
     def delete_sheet(self):
         if not self.current_sheet:
-            messagebox.showinfo("Info", "No sheet selected.")
+            messagebox.showinfo("Info", "No sheet selected!")
             return
         
         sheet_to_delete = int(self.current_sheet[5])
@@ -299,58 +368,61 @@ class Left_Frame(ctk.CTkFrame):
         # Remove current sheet
         if sheet_to_delete > 1:
             self.sheet_tab.delete(self.current_sheet)
-            self.sheet_count = sheet_to_delete-1
+            self.sheet_num = sheet_to_delete-1
             self.deleted_sheet = self.current_sheet
 
             self.current_sheet = "Sheet1"
             self.sheet_tab.set(self.current_sheet)
 
-            messagebox.showinfo("Info", f"{self.deleted_sheet} Deleted")
+            messagebox.showinfo("Info", f"{self.deleted_sheet} Deleted!")
             return
 
         else:
-            messagebox.showinfo("Info", "Can't Delete First Sheet.")
+            messagebox.showinfo("Info", "Can't Delete First Sheet!")
             return
 
     # Update current opened sheet
     def update_sheet(self):
         self.current_sheet = self.sheet_tab.get()
+        self.current_sheet_num = int(self.current_sheet[5])
 
     # Create new column
     def add_column(self):
         for i in range(0,self.total_column):
-            self.sheet_cell[self.current_row][i] = ctk.CTkLabel(
-                self.sheet_table[self.sheet_count],
+            self.sheet_cell[self.current_sheet_num][self.current_row][i] = ctk.CTkLabel(
+                self.sheet_table[self.sheet_num],
                 height=25, width=self.column_width[i],
                 fg_color="gray90",
                 font=("Arial", 14),
                 text="",
                 text_color="black"
             )
-            self.sheet_cell[self.current_row][i].grid(row=self.current_row+1, column=i, padx=(0,5), pady=(5,0))
-        self.sheet_cell[self.current_row][0].configure(text=f"{self.current_row+1}")
+            self.sheet_cell[self.current_sheet_num][self.current_row][i].grid(row=self.current_row+1, column=i, padx=(0,5), pady=(5,0))
+        self.sheet_cell[self.current_sheet_num][self.current_row][0].configure(text=f"{self.current_row+1}")
 
     # Add data to the sheet table
     def add_data(self, product_name, product_price, weight, cust_name):
         if self.current_row >= self.starting_row:
             self.add_column()
 
-        self.sheet_cell[self.current_row][1].configure(text=f"{product_name}")
-        self.sheet_cell[self.current_row][2].configure(text=f"{product_price}")
-        self.sheet_cell[self.current_row][3].configure(text=f"{weight}")
+        self.sheet_cell[self.current_sheet_num][self.current_row][1].configure(text=f"{product_name}")
+        self.sheet_cell[self.current_sheet_num][self.current_row][2].configure(text=f"{product_price}")
 
-        total_price = product_price*weight
-        self.sheet_cell[self.current_row][4].configure(text=f"{total_price}")
+        self.processed_weight = wr.Mysetting.process_value(weight)
+        self.sheet_cell[self.current_sheet_num][self.current_row][3].configure(text=f"{self.processed_weight}")
+
+        self.total_price = product_price * self.processed_weight
+        self.sheet_cell[self.current_sheet_num][self.current_row][4].configure(text=f"{self.total_price}")
 
         self.current_row+=1
 
     # Delete last row table data
     def delete_data(self):
         if self.current_row > 0:
-            self.sheet_cell[self.current_row-1][1].configure(text="")
-            self.sheet_cell[self.current_row-1][2].configure(text="")
-            self.sheet_cell[self.current_row-1][3].configure(text="")
-            self.sheet_cell[self.current_row-1][4].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row-1][1].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row-1][2].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row-1][3].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row-1][4].configure(text="")
 
         else:
             self.current_row = 0
@@ -382,7 +454,7 @@ class Right_Frame(ctk.CTkFrame):
             height=180,
             fg_color="gray15",
             font=("Arial", 80, "bold"),
-            text=f"{self.weight} Kg",
+            text="",
             text_color="white",
             corner_radius=10,
         )
@@ -510,10 +582,15 @@ class Right_Frame(ctk.CTkFrame):
         )
         self.delete_button.pack(side="right", padx=(0,20))
 
+        self.update_weight()
+ 
     # Update weight function
     def update_weight(self):
-        pass
-    
+        # Test only
+        random_var = random.uniform(35.0, 60.0)
+        self.weight = random_var
+        self.weight_label.configure(text=f"{self.weight:.2f} Kg")
+
     # Get product list from stored product file
     def get_products(self):
         self.product_list = pctl.Myproduct.load_products()
@@ -540,6 +617,9 @@ class Right_Frame(ctk.CTkFrame):
     # Send confirmed data
     def confirm_data(self):
         self.left_frame.add_data(self.selected_product,self.selected_product_price,self.weight,self.customer_name)
+
+        # Test only
+        self.update_weight()
 
     def delete_confirmed(self):
         self.left_frame.delete_data()
