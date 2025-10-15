@@ -167,25 +167,25 @@ class Left_Frame(ctk.CTkFrame):
         self.max_row = 500
         self.max_column = 5
 
-        self.current_sheet = ""
-        self.sheet_num = 0
-        self.current_sheet_num = 0
-        self.deleted_sheet = ""
+        self.current_sheet = ""         # Current opened sheet name
+        self.current_sheet_num = 0      # Current opened sheet number
+        self.sheet_num = 0              # Increment sheet number
+        self.deleted_sheet = ""         # Deleted sheet name
 
-        self.sheet_table = {}
-        self.sheet_info_frame = {}
-        self.info_frame1 = {}
-        self.info_frame2 = {}
-        self.info_frame3 = {}
-        self.sheet_cust_name = {}
+        self.sheet_table = {}           # Table for each sheet page
+        self.sheet_info_frame = {}      # Information frame for each sheet page
+        self.info_frame1 = {}           # Information frame 1 
+        self.info_frame2 = {}           # Information frame 2
+        self.info_frame3 = {}           # information frame 3
+        self.sheet_cust_name = {}       # Customer name for each sheet
         self.sheet_cell = [[[0]*self.max_column for r in range(self.max_row)] for s in range(self.max_sheet)]
 
-        self.column_width = [50, 125, 100, 100, 125]
+        self.column_width = [50, 125, 100, 100, 125]    # Column 1-5 width
 
-        self.starting_row = 10
-        self.current_row = 0
-        self.row_counter = 0
-        self.total_column = 5
+        self.starting_row = 10  # Starting row num
+        self.total_column = 5   # Total column for sheet table
+        self.current_row = [0]*self.max_sheet   # Current selected row for each sheet page
+        self.row_counter = [0]*self.max_sheet   # Row counter for each sheet page
 
         # Sheet Tab View
         self.sheet_tab = ctk.CTkTabview(
@@ -201,12 +201,10 @@ class Left_Frame(ctk.CTkFrame):
 
     # Create new sheet function
     def create_new_sheet(self):
-        self.sheet_num += 1
-        sheet_name = f"Sheet{self.sheet_num}"
+        sheet_name = f"Sheet{self.sheet_num+1}"
     
-        if self.sheet_num <= 4:
+        if self.sheet_num < 4:
             tab = self.sheet_tab.add(sheet_name)
-            self.sheet_tab.move(self.sheet_num-1, sheet_name)
 
             # Add scrollable frame
             self.sheet_table[self.sheet_num] = ctk.CTkScrollableFrame(
@@ -352,10 +350,13 @@ class Left_Frame(ctk.CTkFrame):
             )
             self.total_price.pack(side="left")
 
+            self.sheet_tab.set(sheet_name)
+
         else:
             messagebox.showinfo("Info", "Sheet Limit!")
-        
+
         self.update_sheet()
+        self.sheet_num += 1
 
     # Delete sheet function
     def delete_sheet(self):
@@ -363,12 +364,12 @@ class Left_Frame(ctk.CTkFrame):
             messagebox.showinfo("Info", "No sheet selected!")
             return
         
-        sheet_to_delete = int(self.current_sheet[5])
+        sheet_to_delete = int(self.current_sheet[5]) - 1 # Get number from "Sheet1", array[0] => array[1-1]
 
         # Remove current sheet
         if sheet_to_delete > 1:
             self.sheet_tab.delete(self.current_sheet)
-            self.sheet_num = sheet_to_delete-1
+            self.sheet_num = sheet_to_delete
             self.deleted_sheet = self.current_sheet
 
             self.current_sheet = "Sheet1"
@@ -384,53 +385,53 @@ class Left_Frame(ctk.CTkFrame):
     # Update current opened sheet
     def update_sheet(self):
         self.current_sheet = self.sheet_tab.get()
-        self.current_sheet_num = int(self.current_sheet[5])
+        self.current_sheet_num = int(self.current_sheet[5]) - 1 # Get number from "Sheet1", array[0] => array[1-1]
 
     # Create new column
-    def add_column(self):
+    def add_row(self):
         for i in range(0,self.total_column):
-            self.sheet_cell[self.current_sheet_num][self.current_row][i] = ctk.CTkLabel(
-                self.sheet_table[self.sheet_num],
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][i] = ctk.CTkLabel(
+                self.sheet_table[self.current_sheet_num],
                 height=25, width=self.column_width[i],
                 fg_color="gray90",
                 font=("Arial", 14),
                 text="",
                 text_color="black"
             )
-            self.sheet_cell[self.current_sheet_num][self.current_row][i].grid(row=self.current_row+1, column=i, padx=(0,5), pady=(5,0))
-        self.sheet_cell[self.current_sheet_num][self.current_row][0].configure(text=f"{self.current_row+1}")
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][i].grid(row=self.current_row[self.current_sheet_num]+1, column=i, padx=(0,5), pady=(5,0))
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][0].configure(text=f"{self.current_row[self.current_sheet_num]+1}")
 
     # Add data to the sheet table
     def add_data(self, product_name, product_price, weight, cust_name):
-        if self.current_row >= self.starting_row:
-            self.add_column()
+        if self.current_row[self.current_sheet_num] >= self.starting_row:
+            self.add_row()
 
-        self.sheet_cell[self.current_sheet_num][self.current_row][1].configure(text=f"{product_name}")
-        self.sheet_cell[self.current_sheet_num][self.current_row][2].configure(text=f"{product_price}")
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][1].configure(text=f"{product_name}")
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][2].configure(text=f"{product_price}")
 
         self.processed_weight = wr.Mysetting.process_value(weight)
-        self.sheet_cell[self.current_sheet_num][self.current_row][3].configure(text=f"{self.processed_weight}")
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][3].configure(text=f"{self.processed_weight}")
 
         self.total_price = product_price * self.processed_weight
-        self.sheet_cell[self.current_sheet_num][self.current_row][4].configure(text=f"{self.total_price}")
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][4].configure(text=f"{self.total_price}")
 
-        self.current_row+=1
+        self.current_row[self.current_sheet_num]+=1
 
     # Delete last row table data
     def delete_data(self):
-        if self.current_row > 0:
-            self.sheet_cell[self.current_sheet_num][self.current_row-1][1].configure(text="")
-            self.sheet_cell[self.current_sheet_num][self.current_row-1][2].configure(text="")
-            self.sheet_cell[self.current_sheet_num][self.current_row-1][3].configure(text="")
-            self.sheet_cell[self.current_sheet_num][self.current_row-1][4].configure(text="")
+        if self.current_row[self.current_sheet_num] > 0:
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]-1][1].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]-1][2].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]-1][3].configure(text="")
+            self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]-1][4].configure(text="")
 
         else:
-            self.current_row = 0
+            self.current_row[self.current_sheet_num] = 0
             messagebox.showinfo("Info", "Can't Delete Row")
             return
         
-        self.current_row-=1
-        messagebox.showinfo("Info", f"Row{self.current_row+1} Deleted")
+        self.current_row[self.current_sheet_num]-=1
+        messagebox.showinfo("Info", f"Row{self.current_row[self.current_sheet_num]+1} Deleted")
 
 # Right Frame ----------------------------------------------------------------------------------------------------------------------------------
 class Right_Frame(ctk.CTkFrame):
@@ -616,7 +617,11 @@ class Right_Frame(ctk.CTkFrame):
 
     # Send confirmed data
     def confirm_data(self):
-        self.left_frame.add_data(self.selected_product,self.selected_product_price,self.weight,self.customer_name)
+        if self.selected_product == "No Product":
+            messagebox.showinfo("Info", "Product Not Selected!")
+            return
+        else:
+            self.left_frame.add_data(self.selected_product,self.selected_product_price,self.weight,self.customer_name)
 
         # Test only
         self.update_weight()
