@@ -188,10 +188,6 @@ class Left_Frame(ctk.CTkFrame):
         self.current_row = [0]*self.max_sheet   # Current selected row for each sheet page
         self.row_counter = [0]*self.max_sheet   # Row counter for each sheet page
 
-        self.product_qty = {}   # Total product quantity for each sheet page
-        self.total_weight = {}  # Total product total weight for each sheet page
-        self.total_price = {}   # Total product total price for each sheet page
-
         # Sheet Tab View
         self.sheet_tab = ctk.CTkTabview(
             self,
@@ -293,7 +289,7 @@ class Left_Frame(ctk.CTkFrame):
             # Add sheet data information frame
             self.sheet_info_frame[self.sheet_num] = ctk.CTkFrame(
                 tab,
-                fg_color="gray20",
+                fg_color="white",
                 corner_radius=10
             )
             self.sheet_info_frame[self.sheet_num].pack(side="top", fill="both", expand=True, padx=(5,5), pady=(20,5))
@@ -302,7 +298,7 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame1[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=70, height=30,
-                fg_color="gray20",
+                fg_color="white",
                 corner_radius=0
             )
             self.info_frame1[self.sheet_num].pack(side="left", padx=(10,10))
@@ -312,7 +308,7 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame2[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=180, height=30,
-                fg_color="gray20",
+                fg_color="white",
                 corner_radius=0
             )
             self.info_frame2[self.sheet_num].pack(side="left", padx=(0,10))
@@ -322,38 +318,38 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame3[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=250, height=30,
-                fg_color="gray20",
+                fg_color="white",
                 corner_radius=0
             )
             self.info_frame3[self.sheet_num].pack(side="left", padx=(0,0))
             self.info_frame3[self.sheet_num].pack_propagate(False)
 
             # Add product quantity information label
-            self.product_qty[self.sheet_num] = ctk.CTkLabel(
+            self.product_qty = ctk.CTkLabel(
                 self.info_frame1[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Qty: 0",
-                text_color="white"
+                text_color="black"
             )
-            self.product_qty[self.sheet_num].pack(side="left")
+            self.product_qty.pack(side="left")
 
             # Product total weight information label
-            self.total_weight[self.sheet_num] = ctk.CTkLabel(
+            self.total_weight = ctk.CTkLabel(
                 self.info_frame2[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Total Weight: 0Kg",
-                text_color="white"
+                text_color="black"
             )
-            self.total_weight[self.sheet_num].pack(side="left")
+            self.total_weight.pack(side="left")
 
             # Product total price information label
-            self.total_price[self.sheet_num] = ctk.CTkLabel(
+            self.total_price = ctk.CTkLabel(
                 self.info_frame3[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Total Price: Rp. 0,00",
-                text_color="white"
+                text_color="black"
             )
-            self.total_price[self.sheet_num].pack(side="left")
+            self.total_price.pack(side="left")
 
             self.sheet_tab.set(sheet_name)
 
@@ -425,11 +421,10 @@ class Left_Frame(ctk.CTkFrame):
         self.processed_weight = wr.Mysetting.process_value(weight)
         self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][3].configure(text=f"{self.processed_weight}")
 
-        self.sub_price = rp.rupiah_format(product_price * self.processed_weight, with_prefix=False)
-        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][4].configure(text=f"Rp. {self.sub_price}")
+        self.total_price = rp.rupiah_format(product_price * self.processed_weight, with_prefix=True)
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][4].configure(text=f"{self.total_price}")
 
         self.current_row[self.current_sheet_num]+=1
-        self.update_product_info()
 
     # Delete last row table data
     def delete_data(self):
@@ -445,24 +440,7 @@ class Left_Frame(ctk.CTkFrame):
             return
         
         self.current_row[self.current_sheet_num]-=1
-        self.update_product_info()
         messagebox.showinfo("Info", f"Row{self.current_row[self.current_sheet_num]+1} Deleted")
-    
-    # Update sheet product information
-    def update_product_info(self):
-        # Update product quantity
-        self.product_qty[self.current_sheet_num].configure(text=f"Qty: {self.current_row[self.current_sheet_num]}")
-
-        # Update product total weight and total price
-        weight_sum = 0
-        price_sum = 0
-        for i in range(self.current_row[self.current_sheet_num]):
-            weight_sum += int(self.sheet_cell[self.current_sheet_num][i][3].cget("text"))
-            price_sum += int(rp.rupiah_deformat(self.sheet_cell[self.current_sheet_num][i][4].cget("text")))
-
-        self.total_weight[self.current_sheet_num].configure(text=f"Total Weight: {weight_sum}Kg")
-        self.total_price[self.current_sheet_num].configure(text=f"Total Price: Rp. {rp.rupiah_format(price_sum, with_prefix=False)}")
-        
 
 # Right Frame ----------------------------------------------------------------------------------------------------------------------------------
 class Right_Frame(ctk.CTkFrame):
