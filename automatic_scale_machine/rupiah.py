@@ -1,3 +1,9 @@
+# PRINTER HANDLER LIBRARY
+
+# Author    : Alfonsus Giovanni
+# Version   : 0.1
+# Date      : 16 Oktober 2025 
+
 def rupiah_format(angka, with_prefix=False, desimal=0):
     formatted_number = "{:,.{}f}".format(angka, desimal)
     formatted_number = formatted_number.replace(",", "X").replace(".", ",").replace("X", ".")

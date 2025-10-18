@@ -5,9 +5,8 @@ import datetime
 import random
 from tkinter import messagebox
 from automatic_scale_machine import printer_handler as prhd
-from automatic_scale_machine import product_control as pctl
 from automatic_scale_machine import serial_handler as sr
-from automatic_scale_machine import weight_rounder as wr
+from automatic_scale_machine import system_control as sc
 from automatic_scale_machine import rupiah as rp
 
 # Set Appearance Mode
@@ -16,13 +15,15 @@ ctk.set_default_color_theme("blue")
 
 # Menu Bar Frame Class -------------------------------------------------------------------------------------------------------------------------
 class Menu_Bar_Frame(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, left_frame):
         super().__init__(parent)
 
-        self.file_btn_counter = 0
-        self.setting_btn_counter = 0
-        self.current_time = 0
-        self.current_date = 0
+        self.left_frame = left_frame    # Left frame class control
+
+        self.current_time = 0       # Current time
+        self.current_date = 0       # Current date
+        self.file_window = None     # File window top level
+        self.setting_window = None  # Setting window top level
 
         # File Button
         self.file_menu_btn = ctk.CTkButton(
@@ -88,26 +89,125 @@ class Menu_Bar_Frame(ctk.CTkFrame):
     
     # File widget control function
     def show_file_widget(self):
-        self.file_btn_counter += 1
+        if self.file_window is None:
+            self.file_window = File_Window(self, self.left_frame)
+            self.file_window.configure(fg_color="gray10")
 
-        if(self.file_btn_counter<2):
-            print("File Widget Open")
         else:
-            self.file_btn_counter = 0
-            print("File Widget Closed")
+            self.file_window.destroy()
+            self.file_window = None
 
     # File widget control function
     def show_setting_widget(self):
-        self.setting_btn_counter += 1
+        self.setting_window = Setting_Window(self)
+        self.setting_window.configure(fg_color="gray10")
+
+# File Window Top Level ------------------------------------------------------------------------------------------------------------------------
+class File_Window(ctk.CTkToplevel):
+    def __init__(self, parent, left_frame):
+        super().__init__(parent)
+
+        self.geometry("300x200")
+        self.title("File Window")
+        self.resizable(width=False, height=False)
+
+        # Window variable
+        self.left_frame = left_frame
+
+        self.cust_name = "No Name"
+        self.total_price = "0,00"
+        self.manpower_cost = "0,00"
         
-        if(self.setting_btn_counter<2):
-            print("Setting Widget Open")
-        else:
-            self.setting_btn_counter = 0
-            print("Setting Widget Closed")
+        self.cust_nameinfo = "Customer Name\n\n"
+        self.total_priceinfo = "Total Price\n\n"
+        self.manpower_costinfo = "Manpower Cost"
+
+        # Create file tab menu
+        self.file_tab_menu = ctk.CTkTabview(
+            self,
+            fg_color="gray10",
+            bg_color="gray10",
+            segmented_button_selected_color="steel blue",
+            segmented_button_fg_color="gray15",
+            segmented_button_unselected_color="gray15",
+            corner_radius=10
+        )
+        self.file_tab_menu.pack(side="top")
+
+        self.print_tab = self.file_tab_menu.add("Print")
+        self.export_tab = self.file_tab_menu.add("Export")
+        self.upload_tab = self.file_tab_menu.add("Upload")
+
+        # Print tab menu frame
+        self.print_tab_frame = ctk.CTkFrame(self.print_tab, height=100, fg_color="gray15", corner_radius=10)
+        self.print_tab_frame.pack(side="top", fill="x", pady=(0,12))
+
+        # Print button frame
+        self.print_btn_frame = ctk.CTkFrame(self.print_tab, fg_color="gray10", corner_radius=10)
+        self.print_btn_frame.pack(side="top", fill="x") 
+
+        # Print button
+        self.print_btn = ctk.CTkButton(
+            self.print_btn_frame,
+            width=60,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="PRINT",
+            corner_radius=5,
+        )
+        self.print_btn.pack(side="right")
+
+        # Print information label
+        self.print_info_label = ctk.CTkLabel(
+            self.print_tab_frame,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=self.cust_nameinfo + self.total_priceinfo + self.manpower_costinfo
+        )
+        self.print_info_label.grid(row=0, column=0, padx=10, pady=10)
+
+        # Print data label
+        self.print_data_label = ctk.CTkLabel(
+            self.print_tab_frame,
+            justify="left",
+            font=("Arial", 14),
+            text_color="white",
+            text=f": {self.cust_name}\n\n: Rp. {self.total_price}\n\n: Rp. {self.manpower_cost}"
+        )
+        self.print_data_label.grid(row=0, column=1, padx=(0,10), pady=10)
+
+        # Export tab menu
+
+        # Upload tab menu
+
+# Setting Window Top Level ---------------------------------------------------------------------------------------------------------------------
+class Setting_Window(ctk.CTkToplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.geometry("300x200")
+        self.title("Setting Window")
+        self.resizable(width=False, height=False)
+
+        # Create setting tab menu
+        self.setting_tab_menu = ctk.CTkTabview(
+            self,
+            fg_color="gray10",
+            bg_color="gray10",
+            segmented_button_fg_color="gray15",
+            segmented_button_unselected_color="gray15",
+            corner_radius=10
+        )
+        self.setting_tab_menu.pack(padx=(10,10), pady=(0,15))
+
+        product_tab = self.setting_tab_menu.add("Product")
+        scale_tab = self.setting_tab_menu.add("Scale")
+        manpower_tab = self.setting_tab_menu.add("Manpower")
 
 # Sheet Frame ----------------------------------------------------------------------------------------------------------------------------------
-class Sheet_Frame(ctk.CTkFrame):
+class Sheet_Ctrl_Frame(ctk.CTkFrame):
     def __init__(self, parent, left_frame):
         super().__init__(parent)
         self.configure(height=50, corner_radius=0, fg_color="gray15")
@@ -141,10 +241,10 @@ class Sheet_Frame(ctk.CTkFrame):
         # Add sheet button
         self.add_sheet_btn = ctk.CTkButton(
             self,
-            text="+",
-            font=("Arial", 14, "bold"),
             width=30, height=30,
             fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="+",
             command=self.add_sheet
         )
         self.add_sheet_btn.pack(side="left", padx=5)
@@ -159,11 +259,10 @@ class Sheet_Frame(ctk.CTkFrame):
 
 # Left Frame -----------------------------------------------------------------------------------------------------------------------------------
 class Left_Frame(ctk.CTkFrame):
-    def __init__(self, parent, menu_frame):
+    def __init__(self, parent):
         super().__init__(parent)
 
         # Left frame variable
-        self.menu_frame = menu_frame
         self.max_sheet = 4
         self.max_row = 500
         self.max_column = 5
@@ -188,11 +287,16 @@ class Left_Frame(ctk.CTkFrame):
         self.current_row = [0]*self.max_sheet   # Current selected row for each sheet page
         self.row_counter = [0]*self.max_sheet   # Row counter for each sheet page
 
+        self.product_qty = {}   # Total product quantity for each sheet page
+        self.total_weight = {}  # Total product total weight for each sheet page
+        self.total_price = {}   # Total product total price for each sheet page
+
         # Sheet Tab View
         self.sheet_tab = ctk.CTkTabview(
             self,
             fg_color="gray15",
             bg_color="gray10",
+            segmented_button_selected_color="steel blue",
             segmented_button_fg_color="gray10",
             segmented_button_unselected_color="gray10",
             corner_radius=10,
@@ -289,7 +393,7 @@ class Left_Frame(ctk.CTkFrame):
             # Add sheet data information frame
             self.sheet_info_frame[self.sheet_num] = ctk.CTkFrame(
                 tab,
-                fg_color="white",
+                fg_color="gray20",
                 corner_radius=10
             )
             self.sheet_info_frame[self.sheet_num].pack(side="top", fill="both", expand=True, padx=(5,5), pady=(20,5))
@@ -298,7 +402,7 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame1[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=70, height=30,
-                fg_color="white",
+                fg_color="gray20",
                 corner_radius=0
             )
             self.info_frame1[self.sheet_num].pack(side="left", padx=(10,10))
@@ -308,7 +412,7 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame2[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=180, height=30,
-                fg_color="white",
+                fg_color="gray20",
                 corner_radius=0
             )
             self.info_frame2[self.sheet_num].pack(side="left", padx=(0,10))
@@ -318,38 +422,38 @@ class Left_Frame(ctk.CTkFrame):
             self.info_frame3[self.sheet_num] = ctk.CTkFrame(
                 self.sheet_info_frame[self.sheet_num],
                 width=250, height=30,
-                fg_color="white",
+                fg_color="gray20",
                 corner_radius=0
             )
             self.info_frame3[self.sheet_num].pack(side="left", padx=(0,0))
             self.info_frame3[self.sheet_num].pack_propagate(False)
 
             # Add product quantity information label
-            self.product_qty = ctk.CTkLabel(
+            self.product_qty[self.sheet_num] = ctk.CTkLabel(
                 self.info_frame1[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Qty: 0",
-                text_color="black"
+                text_color="white"
             )
-            self.product_qty.pack(side="left")
+            self.product_qty[self.sheet_num].pack(side="left")
 
             # Product total weight information label
-            self.total_weight = ctk.CTkLabel(
+            self.total_weight[self.sheet_num] = ctk.CTkLabel(
                 self.info_frame2[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Total Weight: 0Kg",
-                text_color="black"
+                text_color="white"
             )
-            self.total_weight.pack(side="left")
+            self.total_weight[self.sheet_num].pack(side="left")
 
             # Product total price information label
-            self.total_price = ctk.CTkLabel(
+            self.total_price[self.sheet_num] = ctk.CTkLabel(
                 self.info_frame3[self.sheet_num],
                 font=("Arial", 16, "bold"),
                 text="Total Price: Rp. 0,00",
-                text_color="black"
+                text_color="white"
             )
-            self.total_price.pack(side="left")
+            self.total_price[self.sheet_num].pack(side="left")
 
             self.sheet_tab.set(sheet_name)
 
@@ -418,13 +522,14 @@ class Left_Frame(ctk.CTkFrame):
         self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][1].configure(text=f"{product_name}")
         self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][2].configure(text=f"{product_price}")
 
-        self.processed_weight = wr.Mysetting.process_value(weight)
+        self.processed_weight = sc.Mysystem.process_value(weight)
         self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][3].configure(text=f"{self.processed_weight}")
 
-        self.total_price = rp.rupiah_format(product_price * self.processed_weight, with_prefix=True)
-        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][4].configure(text=f"{self.total_price}")
+        self.sub_price = rp.rupiah_format(product_price * self.processed_weight, with_prefix=False)
+        self.sheet_cell[self.current_sheet_num][self.current_row[self.current_sheet_num]][4].configure(text=f"Rp. {self.sub_price}")
 
         self.current_row[self.current_sheet_num]+=1
+        self.update_product_info()
 
     # Delete last row table data
     def delete_data(self):
@@ -440,7 +545,35 @@ class Left_Frame(ctk.CTkFrame):
             return
         
         self.current_row[self.current_sheet_num]-=1
+        self.update_product_info()
         messagebox.showinfo("Info", f"Row{self.current_row[self.current_sheet_num]+1} Deleted")
+    
+    # Update sheet product information
+    def update_product_info(self):
+        # Update product quantity
+        self.product_qty[self.current_sheet_num].configure(text=f"Qty: {self.current_row[self.current_sheet_num]}")
+
+        # Update product total weight and total price
+        weight_sum = 0
+        price_sum = 0
+        for i in range(self.current_row[self.current_sheet_num]):
+            weight_sum += int(self.sheet_cell[self.current_sheet_num][i][3].cget("text"))
+            price_sum += int(rp.rupiah_deformat(self.sheet_cell[self.current_sheet_num][i][4].cget("text")))
+
+        self.total_weight[self.current_sheet_num].configure(text=f"Total Weight: {weight_sum}Kg")
+        self.total_price[self.current_sheet_num].configure(text=f"Total Price: Rp. {rp.rupiah_format(price_sum, with_prefix=False)}")
+        
+    # Get all current sheet cell data
+    def get_sheet_data(self):
+        pass
+
+    # Print current sheet 
+    def print_sheet(self):
+        pass
+
+    # Export current sheet to csv
+    def export_sheet(self):
+        pass
 
 # Right Frame ----------------------------------------------------------------------------------------------------------------------------------
 class Right_Frame(ctk.CTkFrame):
@@ -454,9 +587,9 @@ class Right_Frame(ctk.CTkFrame):
         self.selected_product_price = "0"
         self.customer_name = "No Name"
 
-        self.product_name_info =    f"Product Name      = \n\n"
-        self.product_price_info =   f"Product Price       = \n\n"
-        self.customer_name_info =   f"Customer Name   ="
+        self.product_name_info =    f"Product Name\n\n"
+        self.product_price_info =   f"Product Price\n\n"
+        self.customer_name_info =   f"Customer Name"
 
         # Weight label
         self.weight_label = ctk.CTkLabel(
@@ -486,7 +619,7 @@ class Right_Frame(ctk.CTkFrame):
             fg_color="white",
             button_color="gray75",
             button_hover_color="gray70",
-            text_color="gray50",
+            text_color="black",
             font=("Arial", 14, "bold"),
             dropdown_font=("Arial", 14, "bold"),
             corner_radius=10,
@@ -540,8 +673,9 @@ class Right_Frame(ctk.CTkFrame):
         # Product info label
         self.product_info_label = ctk.CTkLabel(
             self.info_frame,
-            height=14,
-            font=("Arial", 14),
+            width=120, height=14,
+            font=("Arial", 14, "bold"),
+            anchor="w",
             justify="left",
             text=self.product_name_info+self.product_price_info+self.customer_name_info,
             text_color="white"
@@ -554,7 +688,7 @@ class Right_Frame(ctk.CTkFrame):
             height=14,
             font=("Arial", 14),
             justify="left",
-            text=f"{self.selected_product}\n\nRp. {self.selected_product_price}\n\n{self.customer_name}",
+            text=f": {self.selected_product}\n\n: Rp. {self.selected_product_price}\n\n: {self.customer_name}",
             text_color="white"
         )
         self.info_data_label.grid(row=0, column=1, padx=(10,0), pady=(10,10))
@@ -603,7 +737,7 @@ class Right_Frame(ctk.CTkFrame):
 
     # Get product list from stored product file
     def get_products(self):
-        self.product_list = pctl.Myproduct.load_products()
+        self.product_list = sc.Mysystem.load_products()
         return [p["name"] for p in self.product_list]
     
     # Update selected product function
@@ -615,14 +749,14 @@ class Right_Frame(ctk.CTkFrame):
         for product in self.product_list:
             if product["name"] == self.selected_product:
                 self.selected_product_price = product["price"]
-        self.info_data_label.configure(text=f"{self.selected_product}\n\nRp. {self.selected_product_price}\n\n{self.customer_name}")
+        self.info_data_label.configure(text=f": {self.selected_product}\n\n: Rp. {self.selected_product_price}\n\n: {self.customer_name}")
 
     # Update customer name
     def update_cust_name(self):
         self.customer_name = self.cust_name_entry.get()
 
         if self.customer_name != "":
-            self.info_data_label.configure(text=f"{self.selected_product}\n\nRp. {self.selected_product_price}\n\n{self.customer_name}")
+            self.info_data_label.configure(text=f": {self.selected_product}\n\n: Rp. {self.selected_product_price}\n\n: {self.customer_name}")
 
     # Send confirmed data
     def confirm_data(self):
@@ -650,25 +784,24 @@ class App(ctk.CTk):
 
         # App Setting
         self.geometry("1024x600")
-        self.title("Smart Weighting System")
+        self.title("Integrated Scale System - UD. Soenarto YS")
         self.resizable(width=False, height=False)
 
         # Top Frame
         self.top_frame = ctk.CTkFrame(self, corner_radius=0)
         self.top_frame.pack(side="top")
 
-        # Menu Bar Frame
-        self.menu_bar = Menu_Bar_Frame(self.top_frame)
-        self.menu_bar.configure(width=1024, height=40, corner_radius=0, fg_color="gray15")
-        self.menu_bar.pack(side="left")
-        self.menu_bar.pack_propagate(False)
-
         # Middle Frame
         self.middle_frame = ctk.CTkFrame(self, corner_radius=0)
         self.middle_frame.pack(side="top")
 
+        # Bottom Frame
+        self.bottom_frame = ctk.CTkFrame(self, height=40, corner_radius=0)
+        self.bottom_frame.pack(side="top", fill="x")
+        self.bottom_frame.pack_propagate(False)
+
         # Left Main Frame
-        self.left_frame = Left_Frame(self.middle_frame, self.menu_bar)
+        self.left_frame = Left_Frame(self.middle_frame)
         self.left_frame.configure(width=604, height=520, corner_radius=0, fg_color="gray10")
         self.left_frame.pack(side="left")
         self.left_frame.pack_propagate(False)
@@ -679,13 +812,14 @@ class App(ctk.CTk):
         self.right_frame.pack(side="right")
         self.right_frame.pack_propagate(False)
 
-        # Bottom Frame
-        self.bottom_frame = ctk.CTkFrame(self, height=40, corner_radius=0)
-        self.bottom_frame.pack(side="top", fill="x")
-        self.bottom_frame.pack_propagate(False)
+        # Menu Bar Frame
+        self.menu_bar = Menu_Bar_Frame(self.top_frame, self.left_frame)
+        self.menu_bar.configure(width=1024, height=40, corner_radius=0, fg_color="gray15")
+        self.menu_bar.pack(side="left")
+        self.menu_bar.pack_propagate(False)
 
-        # Sheet Frame
-        self.sheet_frame = Sheet_Frame(self.bottom_frame, self.left_frame)
+        # Sheet Control Frame
+        self.sheet_frame = Sheet_Ctrl_Frame(self.bottom_frame, self.left_frame)
         self.sheet_frame.pack(side="bottom", fill="x")
         self.sheet_frame.pack_propagate(False)
         self.sheet_frame.add_sheet()

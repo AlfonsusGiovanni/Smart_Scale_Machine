@@ -1,0 +1,3 @@
+Create manpower calculation
+Update systen control algorithm
+Check program that related to system control
