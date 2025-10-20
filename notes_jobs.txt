@@ -1,3 +1,2 @@
-Create manpower calculation
-Update systen control algorithm
-Check program that related to system control
+Change file export ui model
+Improve file export feature (file naming, save directory browse, double-name check)

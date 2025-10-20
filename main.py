@@ -8,6 +8,7 @@ from automatic_scale_machine import printer_handler as prhd
 from automatic_scale_machine import serial_handler as sr
 from automatic_scale_machine import system_control as sc
 from automatic_scale_machine import rupiah as rp
+from automatic_scale_machine import file_export as fe
 
 # Set Appearance Mode
 ctk.set_appearance_mode("light")
@@ -112,27 +113,19 @@ class File_Window(ctk.CTkToplevel):
         self.tab_count = 3
 
         self.file_tab_menu = {}
-        self.file_tab_frame = {}
+        self.tab_info_frame = {}
         self.tab_btn_frame = {}
-        self.tab_btn = {}
-
-        self.tab_btn_width = [60, 75, 75]
-        self.tab_btn_text = ["PRINT", "EXPORT", "UPLOAD"]
 
         self.tab_info_label = {}
         self.tab_infodata_label = {}
 
-        self.tab_info1 = ["Customer Name\n\n", "Exported Sheet\n\n"]
-        self.tab_info2 = ["Total Price\n\n", "Export To\n\n"]
-        self.tab_info3 = ["Manpower Cost", "Data Count"]
+        self.tab_info1 = ["Customer Name\n\n", "File Name", "Select File"]
+        self.tab_info2 = ["Total Price\n\n", "Export To"]
+        self.tab_info3 = ["Manpower Cost"]
 
         self.cust_name = "No Name"
         self.total_price = "0,00"
         self.manpower_cost = "0,00"
-
-        self.exported_sheet = 0
-        self.export_type = "CSV"
-        self.data_count = 0
 
         # Create file tab menu
         self.file_tab = ctk.CTkTabview(
@@ -153,57 +146,153 @@ class File_Window(ctk.CTkToplevel):
 
         # Create all file tab menu
         for i in range(self.tab_count):
-            self.file_tab_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], height=100, fg_color="gray15", corner_radius=10)
-            self.file_tab_frame[i].pack(side="top", fill="x", pady=(0,12))
+            self.tab_info_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], fg_color="gray15", corner_radius=10)
+            self.tab_info_frame[i].pack(side="top", fill="x", pady=(0,12))
 
             self.tab_btn_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], fg_color="gray10", corner_radius=10)
             self.tab_btn_frame[i].pack(side="top", fill="x")
 
-            self.tab_btn[i] = ctk.CTkButton(
-                self.tab_btn_frame[i],
-                width=self.tab_btn_width[i],
-                fg_color="steel blue",
-                font=("Arial", 14, "bold"),
-                text=self.tab_btn_text[i],
-                corner_radius=5,
-            )
-            self.tab_btn[i].pack(side="right")
-
-        # Set file tab button function
-        self.tab_btn[0].configure(command=self.check_before_print)
-        self.tab_btn[1].configure(command=self.check_before_export)
-
-        # Create all file tab information label
-        for i in range(self.tab_count-1):
-            self.tab_info_label[i] = ctk.CTkLabel(
-                self.file_tab_frame[i],
-                anchor="w",
-                justify="left",
-                font=("Arial", 14, "bold"),
-                text_color="white",
-                text=self.tab_info1[i] + self.tab_info2[i] + self.tab_info3[i]
-            )
-            self.tab_info_label[i].grid(row=0, column=0, padx=10, pady=10)
+        # Print tab information label
+        self.tab_info_label[0] = ctk.CTkLabel(
+            self.tab_info_frame[0],
+            width=125,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=self.tab_info1[0] + self.tab_info2[0] + self.tab_info3[0]
+        )
+        self.tab_info_label[0].grid(row=0, column=0, padx=(10,0), pady=10)
 
         # Print data label
         self.print_data_label = ctk.CTkLabel(
-            self.file_tab_frame[0],
+            self.tab_info_frame[0],
             justify="left",
             font=("Arial", 14),
             text_color="white",
             text=f": {self.cust_name}\n\n: Rp. {self.total_price}\n\n: Rp. {self.manpower_cost}"
         )
-        self.print_data_label.grid(row=0, column=1, padx=(0,10), pady=10)
+        self.print_data_label.grid(row=0, column=1, pady=10)
 
-        # Export data label
-        self.export_data_label = ctk.CTkLabel(
-            self.file_tab_frame[1],
-            justify="left",
-            font=("Arial", 14),
-            text_color="white",
-            text=f": {self.exported_sheet}\n\n: {self.export_type}\n\n: {self.data_count}"
+        # Print button
+        self.print_btn = ctk.CTkButton(
+            self.tab_btn_frame[0],
+            width=60,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="PRINT",
+            corner_radius=5,
+            command=self.check_before_print
         )
-        self.export_data_label.grid(row=0, column=1, padx=(0,10), pady=10)
+        self.print_btn.pack(side="right")
+
+        # Export tab information 1 frame
+        self.export_info1_frame = ctk.CTkFrame(
+            self.tab_info_frame[1],
+            fg_color="gray15"
+        )
+        self.export_info1_frame.pack(side="top", fill="x", expand=True, pady=10)
+
+        # Export filename info label
+        self.export_filename_info = ctk.CTkLabel(
+            self.export_info1_frame,
+            width=80,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=self.tab_info1[1]
+        )
+        self.export_filename_info.grid(row=0, column=0, padx=(10,0))
+
+        # Export filename entry
+        self.export_filename_entry = ctk.CTkEntry(
+            self.export_info1_frame,
+            width=180,
+            placeholder_text=fe.MyExporter.default_filename
+        )
+        self.export_filename_entry.grid(row=0, column=1)
+
+        # Export tab information 2 frame
+        self.export_info2_frame = ctk.CTkFrame(
+            self.tab_info_frame[1],
+            fg_color="gray15"
+        )
+        self.export_info2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
+
+        # Export directory info label
+        self.export_dir_info = ctk.CTkLabel(
+            self.export_info2_frame,
+            width=80,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=self.tab_info2[1]
+        )
+        self.export_dir_info.grid(row=0, column=0, padx=(10,0))
+
+        # Export dir entry
+        self.export_dir_entry = ctk.CTkEntry(
+            self.export_info2_frame,
+            width=180,
+            placeholder_text=fe.MyExporter.default_dir
+        )
+        self.export_dir_entry.grid(row=0, column=1)
+
+        # Export button
+        self.export_btn = ctk.CTkButton(
+            self.tab_btn_frame[1],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="EXPORT",
+            corner_radius=5,
+            command=self.check_before_export
+        )
+        self.export_btn.pack(side="right")
+
+        # Browse export file folder
+        self.browse_dir_btn = ctk.CTkButton(
+            self.tab_btn_frame[1],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="BROWSE",
+            corner_radius=5,
+            command=lambda: self.browse_dir(self.export_dir_entry)
+        )
+        self.browse_dir_btn.pack(side="right", padx=(10))
+
+        # Upload tab information
+        self.upload_file_info = ctk.CTkLabel(
+            self.tab_info_frame[2],
+            width=80,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=self.tab_info1[2]
+        )
+        self.upload_file_info.grid(row=0, column=0, padx=(10,0), pady=10)
+
+        # Upload file entry
+        self.upload_file_entry = ctk.CTkEntry(
+            self.tab_info_frame[2],
+            width=180,
+        )
+        self.upload_file_entry.grid(row=0, column=1)
+
+        # Upload button
+        self.upload_btn = ctk.CTkButton(
+            self.tab_btn_frame[2],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="UPLOAD",
+            corner_radius=5,
+        )
+        self.upload_btn.pack(side="right")
 
     # Update Print Information Function
     def update_print_info(self):
@@ -221,10 +310,7 @@ class File_Window(ctk.CTkToplevel):
                 self.cust_name = "No Name"
 
         elif self.file_tab.get() == "Export":
-            self.exported_sheet = self.left_frame.current_sheet_num + 1
-            self.data_count = self.left_frame.current_row[self.left_frame.current_sheet_num]
-
-            self.export_data_label.configure(text=f": {self.exported_sheet}\n\n: {self.export_type}\n\n: {self.data_count}")
+            pass
 
         elif self.file_tab.get() == "Upload":
             pass
@@ -240,10 +326,22 @@ class File_Window(ctk.CTkToplevel):
 
     # Check current sheet data before export
     def check_before_export(self):
-        pass
+        filename = self.export_filename_entry.get()
+        filedir = self.export_dir_entry.get()
+        
+        if self.cust_name != "No Name":
+            self.left_frame.export_sheet(filename, filedir)
+        
+        else:
+            self.destroy()
+            messagebox.showinfo("Info", "Sheet Data Invalid!")
 
-    def upload_sheet(self):
-        pass
+    # Browse file export directory
+    def browse_dir(self, entry_widget):
+        folder_path = tk.filedialog.askdirectory()
+        if folder_path:
+            entry_widget.delete(0, ctk.END)
+            entry_widget.insert(0, folder_path)
 
 # Setting Window Top Level ---------------------------------------------------------------------------------------------------------------------
 class Setting_Window(ctk.CTkToplevel):
@@ -629,22 +727,31 @@ class Left_Frame(ctk.CTkFrame):
             price_sum += int(rp.rupiah_deformat(self.sheet_cell[self.current_sheet_num][i][4].cget("text")))
 
         self.total_weight_val[self.current_sheet_num] = weight_sum
-        self.total_price_val[self.current_sheet_num] = rp.rupiah_format(price_sum, with_prefix=False)
+        self.total_price_val[self.current_sheet_num] = rp.rupiah_format(price_sum, with_prefix=True)
 
         self.total_weight_label[self.current_sheet_num].configure(text=f"Total Weight: {self.total_weight_val[self.current_sheet_num]}Kg")
-        self.total_price_label[self.current_sheet_num].configure(text=f"Total Price: Rp. {self.total_price_val[self.current_sheet_num]}")
-
-    # Get all current sheet cell data
-    def get_sheet_data(self):
-        pass
+        self.total_price_label[self.current_sheet_num].configure(text=f"Total Price: {self.total_price_val[self.current_sheet_num]}")
 
     # Print current sheet 
     def print_sheet(self):
         print("Printing Struct...")
 
     # Export current sheet to csv
-    def export_sheet(self):
-        print("Exporting Sheet...")
+    def export_sheet(self, file_name, file_dir):
+        cell_data = [[0]*self.max_column for r in range(self.current_row[self.current_sheet_num])]
+
+        for i in range(self.current_row[self.current_sheet_num]):
+            for j in range(self.max_column):
+                cell_data[i][j] = self.sheet_cell[self.current_sheet_num][i][j].cget("text")
+
+        info = [
+            self.sheet_cust_name[self.current_sheet_num], 
+            self.current_row[self.current_sheet_num],
+            self.total_weight_val[self.current_sheet_num],
+            self.total_price_val[self.current_sheet_num],
+        ]
+
+        fe.MyExporter.export_file(file_name, cell_data, info, file_dir)
 
 # Right Frame ----------------------------------------------------------------------------------------------------------------------------------
 class Right_Frame(ctk.CTkFrame):
