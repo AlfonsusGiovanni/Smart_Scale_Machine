@@ -1,2 +1,7 @@
-Change file export ui model
-Improve file export feature (file naming, save directory browse, double-name check)
+FILE MENU WINDOW
+- Upload tab algorithm
+
+SETTING MENU WINDOW
+- Product add/delete tab    (Done)
+- Scale value set           (Done)
+- Manpower cost set         (Done)

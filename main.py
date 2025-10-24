@@ -9,6 +9,7 @@ from automatic_scale_machine import serial_handler as sr
 from automatic_scale_machine import system_control as sc
 from automatic_scale_machine import rupiah as rp
 from automatic_scale_machine import file_export as fe
+from automatic_scale_machine import file_upload as fu
 
 # Set Appearance Mode
 ctk.set_appearance_mode("light")
@@ -48,7 +49,19 @@ class Menu_Bar_Frame(ctk.CTkFrame):
             fg_color="gray15", hover_color="gray",
             command=self.show_setting_widget
         )
-        self.setting_menu_btn.pack(side="left",)
+        self.setting_menu_btn.pack(side="left", padx=(0,10))
+
+        # Product info Button
+        self.productinfo_menu_btn = ctk.CTkButton(
+            self,
+            text="Product Info", 
+            text_color="white",
+            font=("Arial", 14, "bold"),
+            width=100, height=20,
+            fg_color="gray15", hover_color="gray",
+            command=self.show_productinfo_widget
+        )
+        self.productinfo_menu_btn.pack(side="left")
 
         # Time info label
         self.time_label = ctk.CTkLabel(
@@ -94,10 +107,15 @@ class Menu_Bar_Frame(ctk.CTkFrame):
         self.file_window.configure(fg_color="gray10")
         self.file_window.update_print_info()
 
-    # File widget control function
+    # Setting widget control function
     def show_setting_widget(self):
         self.setting_window = Setting_Window(self)
         self.setting_window.configure(fg_color="gray10")
+
+    # Info widget control function
+    def show_productinfo_widget(self):
+        self.product_window = Product_Window(self)
+        self.product_window.configure(fg_color="gray10")
 
 # File Window Top Level ------------------------------------------------------------------------------------------------------------------------
 class File_Window(ctk.CTkToplevel):
@@ -113,15 +131,15 @@ class File_Window(ctk.CTkToplevel):
         self.tab_count = 3
 
         self.file_tab_menu = {}
-        self.tab_info_frame = {}
+        self.tab_label_frame = {}
         self.tab_btn_frame = {}
 
         self.tab_info_label = {}
         self.tab_infodata_label = {}
 
-        self.tab_info1 = ["Customer Name\n\n", "File Name", "Select File"]
-        self.tab_info2 = ["Total Price\n\n", "Export To"]
-        self.tab_info3 = ["Manpower Cost"]
+        self.tab_label1 = ["Customer Name\n\n", "File Name", "Select File"]
+        self.tab_label2 = ["Total Price\n\n", "Export To"]
+        self.tab_label3 = ["Manpower Cost"]
 
         self.cust_name = "No Name"
         self.total_price = "0,00"
@@ -146,27 +164,27 @@ class File_Window(ctk.CTkToplevel):
 
         # Create all file tab menu
         for i in range(self.tab_count):
-            self.tab_info_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], fg_color="gray15", corner_radius=10)
-            self.tab_info_frame[i].pack(side="top", fill="x", pady=(0,12))
+            self.tab_label_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], fg_color="gray15", corner_radius=10)
+            self.tab_label_frame[i].pack(side="top", fill="x", pady=(0,12))
 
             self.tab_btn_frame[i] = ctk.CTkFrame(self.file_tab_menu[i], fg_color="gray10", corner_radius=10)
             self.tab_btn_frame[i].pack(side="top", fill="x")
 
         # Print tab information label
         self.tab_info_label[0] = ctk.CTkLabel(
-            self.tab_info_frame[0],
+            self.tab_label_frame[0],
             width=125,
             anchor="w",
             justify="left",
             font=("Arial", 14, "bold"),
             text_color="white",
-            text=self.tab_info1[0] + self.tab_info2[0] + self.tab_info3[0]
+            text=self.tab_label1[0] + self.tab_label2[0] + self.tab_label3[0]
         )
         self.tab_info_label[0].grid(row=0, column=0, padx=(10,0), pady=10)
 
         # Print data label
         self.print_data_label = ctk.CTkLabel(
-            self.tab_info_frame[0],
+            self.tab_label_frame[0],
             justify="left",
             font=("Arial", 14),
             text_color="white",
@@ -187,54 +205,54 @@ class File_Window(ctk.CTkToplevel):
         self.print_btn.pack(side="right")
 
         # Export tab information 1 frame
-        self.export_info1_frame = ctk.CTkFrame(
-            self.tab_info_frame[1],
+        self.export_label1_frame = ctk.CTkFrame(
+            self.tab_label_frame[1],
             fg_color="gray15"
         )
-        self.export_info1_frame.pack(side="top", fill="x", expand=True, pady=10)
+        self.export_label1_frame.pack(side="top", fill="x", expand=True, pady=10)
 
-        # Export filename info label
-        self.export_filename_info = ctk.CTkLabel(
-            self.export_info1_frame,
+        # Export filename label
+        self.export_filename_label = ctk.CTkLabel(
+            self.export_label1_frame,
             width=80,
             anchor="w",
             justify="left",
             font=("Arial", 14, "bold"),
             text_color="white",
-            text=self.tab_info1[1]
+            text=self.tab_label1[1]
         )
-        self.export_filename_info.grid(row=0, column=0, padx=(10,0))
+        self.export_filename_label.grid(row=0, column=0, padx=(10,0))
 
         # Export filename entry
         self.export_filename_entry = ctk.CTkEntry(
-            self.export_info1_frame,
+            self.export_label1_frame,
             width=180,
             placeholder_text=fe.MyExporter.default_filename
         )
         self.export_filename_entry.grid(row=0, column=1)
 
         # Export tab information 2 frame
-        self.export_info2_frame = ctk.CTkFrame(
-            self.tab_info_frame[1],
+        self.export_label2_frame = ctk.CTkFrame(
+            self.tab_label_frame[1],
             fg_color="gray15"
         )
-        self.export_info2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
+        self.export_label2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
 
         # Export directory info label
-        self.export_dir_info = ctk.CTkLabel(
-            self.export_info2_frame,
+        self.export_dir_label = ctk.CTkLabel(
+            self.export_label2_frame,
             width=80,
             anchor="w",
             justify="left",
             font=("Arial", 14, "bold"),
             text_color="white",
-            text=self.tab_info2[1]
+            text=self.tab_label2[1]
         )
-        self.export_dir_info.grid(row=0, column=0, padx=(10,0))
+        self.export_dir_label.grid(row=0, column=0, padx=(10,0))
 
         # Export dir entry
         self.export_dir_entry = ctk.CTkEntry(
-            self.export_info2_frame,
+            self.export_label2_frame,
             width=180,
             placeholder_text=fe.MyExporter.default_dir
         )
@@ -265,20 +283,20 @@ class File_Window(ctk.CTkToplevel):
         self.browse_dir_btn.pack(side="right", padx=(10))
 
         # Upload tab information
-        self.upload_file_info = ctk.CTkLabel(
-            self.tab_info_frame[2],
+        self.upload_file_label = ctk.CTkLabel(
+            self.tab_label_frame[2],
             width=80,
             anchor="w",
             justify="left",
             font=("Arial", 14, "bold"),
             text_color="white",
-            text=self.tab_info1[2]
+            text=self.tab_label1[2]
         )
-        self.upload_file_info.grid(row=0, column=0, padx=(10,0), pady=10)
+        self.upload_file_label.grid(row=0, column=0, padx=(10,0), pady=10)
 
         # Upload file entry
         self.upload_file_entry = ctk.CTkEntry(
-            self.tab_info_frame[2],
+            self.tab_label_frame[2],
             width=180,
         )
         self.upload_file_entry.grid(row=0, column=1)
@@ -327,7 +345,15 @@ class File_Window(ctk.CTkToplevel):
     # Check current sheet data before export
     def check_before_export(self):
         filename = self.export_filename_entry.get()
+        if filename == "":
+            filename = fe.MyExporter.default_filename + fe.MyExporter.file_format
+
+        else:
+            filename = filename + fe.MyExporter.file_format
+        
         filedir = self.export_dir_entry.get()
+        if filedir == "":
+            filedir = fe.MyExporter.default_dir
         
         if self.cust_name != "No Name":
             self.left_frame.export_sheet(filename, filedir)
@@ -352,21 +378,452 @@ class Setting_Window(ctk.CTkToplevel):
         self.title("Setting Window")
         self.resizable(width=False, height=False)
 
+        # Setting window variable
+        self.setting_tab_menu = {}
+        self.tab_label_frame = {}
+        self.tab_btn_frame = {}
+
+        self.tab_count = 3
+
         # Create setting tab menu
-        self.setting_tab_menu = ctk.CTkTabview(
+        self.setting_tab = ctk.CTkTabview(
             self,
             fg_color="gray10",
             bg_color="gray10",
             segmented_button_fg_color="gray15",
             segmented_button_unselected_color="gray15",
-            corner_radius=10
+            corner_radius=10,
+            command=self.update_setting_info
         )
-        self.setting_tab_menu.pack(padx=(10,10), pady=(0,15))
+        self.setting_tab.pack(side="top")
 
-        product_tab = self.setting_tab_menu.add("Product")
-        scale_tab = self.setting_tab_menu.add("Scale")
-        manpower_tab = self.setting_tab_menu.add("Manpower")
+        self.setting_tab_menu[0] = self.setting_tab.add("Product")
+        self.setting_tab_menu[1] = self.setting_tab.add("Scale")
+        self.setting_tab_menu[2] = self.setting_tab.add("Manpower")
 
+        # Create all file tab menu
+        for i in range(self.tab_count):
+            self.tab_label_frame[i] = ctk.CTkFrame(self.setting_tab_menu[i], fg_color="gray15", corner_radius=10)
+            self.tab_label_frame[i].pack(side="top", fill="x", pady=(0,12))
+
+            self.tab_btn_frame[i] = ctk.CTkFrame(self.setting_tab_menu[i], fg_color="gray10", corner_radius=10)
+            self.tab_btn_frame[i].pack(side="top", fill="x")
+
+        # Product tab information 1 frame
+        self.product_label1_frame = ctk.CTkFrame(
+            self.tab_label_frame[0],
+            fg_color="gray15"
+        )
+        self.product_label1_frame.pack(side="top", fill="x", expand=True, pady=10)
+
+        # Product name info label
+        self.product_name_label = ctk.CTkLabel(
+            self.product_label1_frame,
+            width=110,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Product Name"
+        )
+        self.product_name_label.grid(row=0, column=0, padx=(10,0))
+
+        # Product name entry
+        self.product_name_entry = ctk.CTkEntry(
+            self.product_label1_frame,
+            width=150,
+            placeholder_text="Input Name"
+        )
+        self.product_name_entry.grid(row=0, column=1)
+
+        # Product tab information 2 frame
+        self.product_label2_frame = ctk.CTkFrame(
+            self.tab_label_frame[0],
+            fg_color="gray15"
+        )
+        self.product_label2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
+
+        # Product price info label
+        self.product_price_label = ctk.CTkLabel(
+            self.product_label2_frame,
+            width=110,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Product Price"
+        )
+        self.product_price_label.grid(row=0, column=0, padx=(10,0))
+
+        # Product price entry
+        self.product_price_entry = ctk.CTkEntry(
+            self.product_label2_frame,
+            width=150,
+            placeholder_text="Input Price"
+        )
+        self.product_price_entry.grid(row=0, column=1)
+
+        # Delete product button
+        self.delete_product_btn = ctk.CTkButton(
+            self.tab_btn_frame[0],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="DELETE",
+            corner_radius=5,
+            command=self.delete_product
+        )
+        self.delete_product_btn.pack(side="right")
+
+        # Add product button
+        self.add_product_btn = ctk.CTkButton(
+            self.tab_btn_frame[0],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="ADD",
+            corner_radius=5,
+            command=self.add_product
+        )
+        self.add_product_btn.pack(side="right", padx=10)
+
+        # Scale tab information 1 frame
+        self.scale_info1_frame = ctk.CTkFrame(
+            self.tab_label_frame[1],
+            fg_color="gray15",
+        )
+        self.scale_info1_frame.pack(side="top", fill="x", expand=True, pady=10)
+
+        # Scale setting value info
+        self.scale_value_info = ctk.CTkLabel(
+            self.scale_info1_frame,
+            width=150,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Rounded Weight",
+        )
+        self.scale_value_info.grid(row=0, column=0, padx=(10,0))
+
+        # Scale setting value data
+        self.scale_value_data = ctk.CTkLabel(
+            self.scale_info1_frame,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=": 0.0Kg",
+        )
+        self.scale_value_data.grid(row=0, column=1)
+
+        # Scale tab information 2 frame
+        self.scale_info2_frame = ctk.CTkFrame(
+            self.tab_label_frame[1],
+            fg_color="gray15",
+        )
+        self.scale_info2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
+
+        # Change scale setting info
+        self.change_set_label = ctk.CTkLabel(
+            self.scale_info2_frame,
+            width=150,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Set Rounded Weight",
+        )
+        self.change_set_label.grid(row=0, column=0, padx=(10,0))
+
+        # Change scale setting entry
+        self.change_weight_entry = ctk.CTkEntry(
+            self.scale_info2_frame,
+            width=110,
+            placeholder_text="Input Value"
+        )
+        self.change_weight_entry.grid(row=0, column=1)
+
+        # Confirm scale setting btn
+        self.confirm_scale_btn = ctk.CTkButton(
+            self.tab_btn_frame[1],
+            width=80,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="CONFIRM",
+            corner_radius=5,
+            command=self.change_rounded_weight
+        )
+        self.confirm_scale_btn.pack(side="right")
+
+        # Manpower tab label 1 frame
+        self.manpower_labe1_frame = ctk.CTkFrame(
+            self.tab_label_frame[2],
+            fg_color="gray15",
+        )
+        self.manpower_labe1_frame.pack(side="top", fill="x", expand=True, pady=10)
+
+        # Manpower cost label
+        self.manpower_cost_label = ctk.CTkLabel(
+            self.manpower_labe1_frame,
+            width=150,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Manpower Cost",
+        )
+        self.manpower_cost_label.grid(row=0, column=0, padx=(10,0))
+
+        # Manpower cost data
+        self.manpower_cost_data = ctk.CTkLabel(
+            self.manpower_labe1_frame,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text=": Rp 0.0/Kg",
+        )
+        self.manpower_cost_data.grid(row=0, column=1)
+
+        # Manpower tab label 2 frame
+        self.manpower_label2_frame = ctk.CTkFrame(
+            self.tab_label_frame[2],
+            fg_color="gray15",
+        )
+        self.manpower_label2_frame.pack(side="top", fill="x", expand=True, pady=(0,10))
+
+        # Change manpower cost label
+        self.change_cost_label = ctk.CTkLabel(
+            self.manpower_label2_frame,
+            width=150,
+            anchor="w",
+            justify="left",
+            font=("Arial", 14, "bold"),
+            text_color="white",
+            text="Set Manpower Cost",
+        )
+        self.change_cost_label.grid(row=0, column=0, padx=(10,0))
+
+        # Change manpower cost entry
+        self.change_cost_entry = ctk.CTkEntry(
+            self.manpower_label2_frame,
+            width=110,
+            placeholder_text="Set Cost"
+        )
+        self.change_cost_entry.grid(row=0, column=1)
+
+        # Confirm cost setting btn
+        self.confirm_cost_btn = ctk.CTkButton(
+            self.tab_btn_frame[2],
+            width=80,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="CONFIRM",
+            corner_radius=5,
+            command=self.change_manpower_cost
+        )
+        self.confirm_cost_btn.pack(side="right")
+    
+    # Add product function
+    def add_product(self):
+        input_name = self.product_name_entry.get()
+        input_price = self.product_price_entry.get()
+        product_name = {}
+        product_price = {}
+        
+        # Check if name input is empty
+        if input_name == "":
+            messagebox.showinfo("Info", "Product Name Can't Empty!")
+            return
+        
+        # Check if price input is empty
+        if input_price == "":
+            messagebox.showinfo("Info", "Product Price Can't Empty!")
+            return
+        
+        # Load product
+        product_list = sc.Mysystem.load_products()
+        product_count = 0
+        product_num = 0
+        product_exist = False
+
+        for product in product_list:
+            product_name[product_count] = product["name"]
+            product_price[product_count] = product["price"]
+            product_count+=1
+        
+        # Check if product name is exist
+        for i in range(product_count):
+            if product_name[i] == input_name:
+                product_exist = True
+                break
+            product_num+=1
+        
+        # Check if price is updated
+        if product_exist and product_price[product_num] != float(input_price):
+            sc.Mysystem.update_price(input_name, float(input_price))
+            return
+
+        # Check if price is not updated or get same product data
+        elif product_exist and product_price[product_num] == float(input_price):
+            messagebox.showinfo("Info", "Product Already Exist!")
+            return
+        
+        # Check if new data added
+        elif not product_exist:
+           sc.Mysystem.add_product(input_name, float(input_price))
+
+    # Update setting value function
+    def update_setting_info(self):
+        if self.setting_tab.get() == "Scale":
+            setting_list = sc.Mysystem.load_setting()
+            rounded_val = 0
+
+            for setting_val in setting_list:
+                rounded_val = setting_val["weight_val"]
+            
+            self.scale_value_data.configure(text=f": {rounded_val}Kg")
+
+        elif self.setting_tab.get() == "Manpower":
+            setting_list = sc.Mysystem.load_setting()
+            cost_val = 0
+
+            for setting_val in setting_list:
+               cost_val = setting_val["manpower_val"]
+               
+            self.manpower_cost_data.configure(text=f": Rp. {cost_val}/Kg")
+
+    # Delete product function
+    def delete_product(self):
+        input_name = self.product_name_entry.get()
+        
+        # Check if name input is empty
+        if input_name == "":
+            messagebox.showinfo("Info", "Product Name Can't Empty!")
+            return
+        
+        sc.Mysystem.delete_product(input_name)
+
+    # Change rounded weight value
+    def change_rounded_weight(self):
+        input_weight = self.change_weight_entry.get()
+
+        if input_weight == "":
+            messagebox.showinfo("Info", "Value Can't Empty!")
+            return
+        
+        sc.Mysystem.change_weight_setting(float(input_weight))
+        self.update_setting_info()
+    
+    # Change manpower cost value
+    def change_manpower_cost(self):
+        input_cost = self.change_cost_entry.get()
+
+        if input_cost == "":
+            messagebox.showinfo("Info", "Value Can't Empty!")
+            return
+        
+        sc.Mysystem.change_manpower_setting(float(input_cost))
+        self.update_setting_info()
+
+# Product Info Window Top Level ----------------------------------------------------------------------------------------------------------------
+class Product_Window(ctk.CTkToplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.geometry("370x200")
+        self.title("Product Window")
+        self.resizable(width=False, height=False)
+
+        # Product window variable
+        self.row_num = sc.Mysystem.max_product
+        self.column_num = 3
+
+        self.column_width = [50, 125, 125]
+        self.product_cell = [[0]*self.column_num for i in range(self.row_num)]
+
+        # Product scroll frame
+        self.product_scroll_frame = ctk.CTkScrollableFrame(
+            self,
+            fg_color="white",
+            corner_radius=10,
+        )
+        self.product_scroll_frame.pack(side="top", fill="x", expand=True, padx=15, pady=15)
+
+        # Product num title
+        self.product_num_title = ctk.CTkLabel(
+            self.product_scroll_frame,
+            height=40, width=self.column_width[0],
+            fg_color="gray75",
+            font=("Arial", 14, "bold"),
+            text="No",
+            text_color="black",
+        )
+        self.product_num_title.grid(row=0, column=0, padx=(0,5), pady=(0,5))
+
+        # Product name title
+        self.product_name_title = ctk.CTkLabel(
+            self.product_scroll_frame,
+            height=40, width=self.column_width[1],
+            fg_color="gray75",
+            font=("Arial", 14, "bold"),
+            text="Product Name",
+            text_color="black",
+        )
+        self.product_name_title.grid(row=0, column=1, padx=(0,5), pady=(0,5))
+
+        # Product price tittle
+        self.product_price_title = ctk.CTkLabel(
+            self.product_scroll_frame,
+            height=40, width=self.column_width[2],
+            fg_color="gray75",
+            font=("Arial", 14, "bold"),
+            text="Product Price\n(Rp)",
+            text_color="black",
+        )
+        self.product_price_title.grid(row=0, column=2, pady=(0,5))
+
+        self.show_product()
+
+    # Show product function
+    def show_product(self):
+        # Load current saved product
+        product_list = sc.Mysystem.load_products()
+        product_data = [[0]*2 for i in range(self.row_num)]
+
+        product_count = 0
+
+        for product in product_list:
+            product_data[product_count][0] = product["name"]
+            product_data[product_count][1] = product["price"]
+            product_count+=1
+
+        # Create cell based on product count
+        for i in range(product_count):
+            # Product number
+            self.product_cell[i][0] = ctk.CTkLabel(
+                self.product_scroll_frame,
+                height=25, width=self.column_width[0],
+                fg_color="gray90",
+                font=("Arial", 14),
+                text=f"{i+1}",
+                text_color="black"
+            )
+            self.product_cell[i][0].grid(row=i+1, column=0, padx=(0,5), pady=(0,5))
+
+            # Product name & price
+            for j in range(1, self.column_num):
+                self.product_cell[i][j] = ctk.CTkLabel(
+                    self.product_scroll_frame,
+                    height=25, width=self.column_width[j],
+                    fg_color="gray90",
+                    font=("Arial", 14),
+                    text=f"{product_data[i][j-1]}",
+                    text_color="black"
+                )
+                self.product_cell[i][j].grid(row=i+1, column=j, padx=(0,5), pady=(0,5))
+            
 # Sheet Frame ----------------------------------------------------------------------------------------------------------------------------------
 class Sheet_Ctrl_Frame(ctk.CTkFrame):
     def __init__(self, parent, left_frame):
@@ -801,6 +1258,7 @@ class Right_Frame(ctk.CTkFrame):
             font=("Arial", 14, "bold"),
             dropdown_font=("Arial", 14, "bold"),
             corner_radius=10,
+            dynamic_resizing=False,
             values=self.get_products(),
             command=self.update_product
         )

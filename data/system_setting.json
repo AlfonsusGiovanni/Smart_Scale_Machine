@@ -1,6 +1,6 @@
 [
     {
         "weight_val": 0.25,
-        "manpower_val": 25
+        "manpower_val": 25.0
     }
 ]

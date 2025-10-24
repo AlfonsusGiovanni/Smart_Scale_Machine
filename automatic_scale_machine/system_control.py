@@ -6,6 +6,7 @@
 
 import json
 import os
+from tkinter import messagebox
 
 product_file_dir = "data/products.json"
 setting_file_dir = "data/system_setting.json"
@@ -30,6 +31,7 @@ class App_System:
         self.setting_data = self.load_setting()
 
         self.system_code = Error_Code.NO_ERR
+        self.max_product = 10
 
     # Load Saved Products Function
     def load_products(self):
@@ -65,6 +67,7 @@ class App_System:
         for variable in self.setting_data:
             variable["weight_val"] = set_value
             self.save_setting()
+            messagebox.showinfo("Info", "Change Value Success!")
             break
 
     # Change Manpower Setting Value Function
@@ -74,6 +77,7 @@ class App_System:
         for variable in self.setting_data:
             variable["manpower_val"] = set_value
             self.save_setting()
+            messagebox.showinfo("Info", "Change Value Success!")
             break
 
     # Process Weight Function
@@ -110,35 +114,30 @@ class App_System:
     # Add Product Function
     def add_product(self, input_name, input_price):
         name = input_name
-        
-        if not name:
-            self.system_code = Error_Code.PRODUCT_NAME_INVALID
-            return
-        
-        try:
-            price = input_price
-
-        except ValueError:
-            self.system_code = Error_Code.SET_VALUE_INVALID
-            return
-        
+        price = input_price
+    
         self.product_list.append({"name": name, "price": price})
         self.save_product()
+        messagebox.showinfo("Info", "Product Added!")
 
     # Delete Product Function
-    def delete_product(self, product_num):
-        if not self.product_list:
-            return
+    def delete_product(self, product_name):
+        target_num = 0
 
-        target = product_num
-        index = int(target) - 1
+        for product in self.product_list:
+            if product_name == product["name"]:
+                break
+            target_num+=1
+
+        index = int(target_num)
         
         if 0 <= index < len(self.product_list):
             self.product_list.pop(index)
             self.save_product()
+            messagebox.showinfo("Info", "Product Deleted!")
 
         else:
-            self.system_code = Error_Code.PRODUCT_NOT_FOUND
+            messagebox.showinfo("Info", "Product Not Found!")
     
     # Update Product Price Function
     def update_price(self, update_name, new_price):
@@ -147,9 +146,10 @@ class App_System:
             if product["name"] == update_name:
                 product["price"] = new_price
                 self.save_product()
+                messagebox.showinfo("Info", "Price Updated!")
                 break
 
             else:
-                self.system_code = Error_Code.PRODUCT_NOT_FOUND
+                messagebox.showinfo("Info", "Product Not Found!")
 
 Mysystem = App_System(product_file_dir, setting_file_dir)

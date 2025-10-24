@@ -6,6 +6,7 @@
 
 import csv
 import os
+from tkinter import messagebox
 
 # Default Exported File Dir
 home_dir = os.path.expanduser("~")
@@ -13,15 +14,27 @@ docs_folder = os.path.join(home_dir, "Documents")
 
 class Exporter:
     def __init__(self):
-        self.default_filename = "Docs1.csv"
+        self.file_format = ".csv"
+        self.default_filename = "Docs1"
         self.default_dir = "/home/alfonsus-giovanni/Documents"
 
-    def check_filename(self):
-        pass
+        self.double_filename = False
 
-    def export_file(self, sheet_name, sheet_data, sheet_info, dir):
-        file_path = os.path.join(self.default_dir, self.default_filename)
-            
+    def check_filename(self, filename, filedir):
+        existing_files = os.listdir(filedir)
+
+        if filename in existing_files:
+            return True
+
+        else:
+            return False
+
+    def export_file(self, filename, sheet_data, sheet_info, filedir):
+        if self.check_filename(filename, filedir) == True:
+            messagebox.showinfo("Info", "Filename Already Exist")
+            return
+
+        file_path = os.path.join(filedir, filename)
 
         cust_info = ['Customer', sheet_info[0]]
         qty_info = ['Quantity', sheet_info[1]]
@@ -48,7 +61,9 @@ class Exporter:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(data)
 
+            messagebox.showinfo("Info", "Export Success!")
+
         except Exception as e:
-            print(f"Error: {e}")
+            messagebox.showinfo("Info", f"Export Error: {e}")
 
 MyExporter = Exporter()
