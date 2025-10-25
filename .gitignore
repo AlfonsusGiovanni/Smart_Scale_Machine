@@ -1,0 +1,11 @@
+# Google credentials
+credentials/
+user_credentials.json
+token.pkl
+token.json
+service_account.json
+
+# OS/editor junk (optional)
+.vscode/
+__pycache__/
+*.pyc

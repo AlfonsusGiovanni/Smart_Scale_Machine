@@ -309,8 +309,21 @@ class File_Window(ctk.CTkToplevel):
             font=("Arial", 14, "bold"),
             text="UPLOAD",
             corner_radius=5,
+            command=self.check_before_upload
         )
         self.upload_btn.pack(side="right")
+
+        # Browse upload file folder
+        self.browse_file_btn = ctk.CTkButton(
+            self.tab_btn_frame[2],
+            width=75,
+            fg_color="steel blue",
+            font=("Arial", 14, "bold"),
+            text="BROWSE",
+            corner_radius=5,
+            command=lambda: self.browse_file(self.upload_file_entry)
+        )
+        self.browse_file_btn.pack(side="right", padx=(10))
 
     # Update Print Information Function
     def update_print_info(self):
@@ -361,13 +374,28 @@ class File_Window(ctk.CTkToplevel):
         else:
             self.destroy()
             messagebox.showinfo("Info", "Sheet Data Invalid!")
+    
+    # Check file dir before export
+    def check_before_upload(self):
+        if self.upload_file_entry.get() == "":
+            messagebox.showinfo("Info", "Please Select File!")
+            return
+        
+        fu.MyAPIService.upload_file(self.file_path)
 
-    # Browse file export directory
+    # Browse export directory
     def browse_dir(self, entry_widget):
         folder_path = tk.filedialog.askdirectory()
         if folder_path:
             entry_widget.delete(0, ctk.END)
             entry_widget.insert(0, folder_path)
+
+    # Browse upload file
+    def browse_file(self, entry_widget):
+        self.file_path = tk.filedialog.askopenfilename()
+        if self.file_path:
+            entry_widget.delete(0, ctk.END)
+            entry_widget.insert(0, self.file_path)
 
 # Setting Window Top Level ---------------------------------------------------------------------------------------------------------------------
 class Setting_Window(ctk.CTkToplevel):
