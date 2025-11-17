@@ -152,4 +152,8 @@ class App_System:
             else:
                 messagebox.showinfo("Info", "Product Not Found!")
 
+    # Get Total Product Count
+    def get_product_count(self):
+        return len(self.product_list)
+
 Mysystem = App_System(product_file_dir, setting_file_dir)

@@ -4,7 +4,7 @@ import time
 import datetime
 import random
 from tkinter import messagebox
-from automatic_scale_machine import printer_handler as prhd
+from automatic_scale_machine import printer_handler as ph
 from automatic_scale_machine import serial_handler as sr
 from automatic_scale_machine import system_control as sc
 from automatic_scale_machine import rupiah as rp
@@ -331,11 +331,11 @@ class File_Window(ctk.CTkToplevel):
             self.cust_name = self.left_frame.sheet_cust_name[self.left_frame.current_sheet_num]
             self.total_price = self.left_frame.total_price_val[self.left_frame.current_sheet_num]
 
-            unformatted_manpower_cost = sc.Mysystem.calc_manpower(self.left_frame.total_weight_val[self.left_frame.current_sheet_num])
-            self.manpower_cost = rp.rupiah_format(unformatted_manpower_cost, with_prefix=False)
+            self.unformatted_manpower_cost = sc.Mysystem.calc_manpower(self.left_frame.total_weight_val[self.left_frame.current_sheet_num])
+            self.manpower_cost = rp.rupiah_format(self.unformatted_manpower_cost, with_prefix=False)
 
             if len(self.cust_name) > 0:
-                self.print_data_label.configure(text=f": {self.cust_name}\n\n: Rp. {self.total_price}\n\n: Rp. {self.manpower_cost}")
+                self.print_data_label.configure(text=f": {self.cust_name}\n\n: {self.total_price}\n\n: Rp. {self.manpower_cost}")
 
             else:
                 self.cust_name = "No Name"
@@ -349,8 +349,8 @@ class File_Window(ctk.CTkToplevel):
     # Check current sheet data before printing
     def check_before_print(self):
         if self.cust_name != "No Name":
-            self.left_frame.print_sheet()
-        
+            self.left_frame.print_sheet(self.cust_name, self.unformatted_manpower_cost)
+
         else:
             self.destroy()
             messagebox.showinfo("Info", "Sheet Data Invalid!")
@@ -1218,13 +1218,66 @@ class Left_Frame(ctk.CTkFrame):
         self.total_price_label[self.current_sheet_num].configure(text=f"Total Price: {self.total_price_val[self.current_sheet_num]}")
 
     # Print current sheet 
-    def print_sheet(self):
-        print("Printing Struct...")
+    def print_sheet(self, customer_name, manpower_cost):
+        cell_data = [[0]*3 for r in range(self.current_row[self.current_sheet_num])]
+
+        product_count = sc.Mysystem.get_product_count()
+        counter = 0
+
+        product_weight = [0] * product_count
+        product_name = [0] * product_count
+        product_price = [0] * product_count
+
+        non_zero_product_count = 0
+
+        # Get cell data
+        for i in range(self.current_row[self.current_sheet_num]):
+            for j in range(0, 3):
+                cell_data[i][j] = self.sheet_cell[self.current_sheet_num][i][j+1].cget("text")
+
+        # Get product name & price
+        for product in sc.Mysystem.product_list:
+            product_name[counter] = product["name"]
+            product_price[counter] = product["price"]
+            counter+=1
+
+        # Count each product weight
+        for i in range(self.current_row[self.current_sheet_num]):
+            for j in range(len(product_weight)):
+                if cell_data[i][0] == product_name[j]:
+                    product_weight[j]+=int(cell_data[i][2])
+
+        unsorted_items = [[0]*3 for i in range(product_count)]
+
+        for i in range(product_count):
+            unsorted_items[i][0] = product_name[i]
+            unsorted_items[i][1] = product_weight[i]
+            unsorted_items[i][2] = product_price[i]
+
+            if product_weight[i] > 0:
+                non_zero_product_count+=1
+
+        print(unsorted_items)
+
+        items = [[0]*3 for i in range(non_zero_product_count)]
+        skip_num = 0
+
+        for i in range(len(unsorted_items)):
+            if unsorted_items[i][1] > 0:
+                items[i-skip_num][0] = product_name[i]
+                items[i-skip_num][1] = product_weight[i]
+                items[i-skip_num][2] = product_price[i]
+            
+            else:
+                skip_num+=1
+
+        ph.MyPrinter.print_receipt(customer_name, items, self.current_row[self.current_sheet_num], manpower_cost)
 
     # Export current sheet to csv
     def export_sheet(self, file_name, file_dir):
         cell_data = [[0]*self.max_column for r in range(self.current_row[self.current_sheet_num])]
 
+        # Get cell data
         for i in range(self.current_row[self.current_sheet_num]):
             for j in range(self.max_column):
                 cell_data[i][j] = self.sheet_cell[self.current_sheet_num][i][j].cget("text")

@@ -6,13 +6,13 @@
 
 import datetime
 
-PRINTER_PATH = "/dev/usb/lp0"
+PRINTER_PATH = "/dev/rfcomm0"
 
 # ESC/POS control codes
 ESC = b"\x1b"
 GS  = b"\x1d"
 
-class printer:
+class Printer:
     def __init__(self, esc_code, gs_code):
         # Control codes
         self.esc = esc_code
@@ -40,14 +40,10 @@ class printer:
 
         return cmd
 
-    def print_receipt(self, input_name, item_data, input_weight, input_price):
+    def print_receipt(self, input_name, items, item_count, manpower):
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.cust_name = input_name
-        self.total_weight = input_weight
-        self.total_price = input_price
-
-        self.item_count = len(item_data)
 
         with open(PRINTER_PATH, "wb") as f:
             data = b""
@@ -63,27 +59,30 @@ class printer:
             data += self.escpos_text(f"Name: {self.cust_name}")
             data += self.escpos_text("--------------------------------")
 
-            # Item list
-            items = [
-                ("Tepung A", 2, 2700),
-                ("Tepung B", 1, 2550),
-                ("Campur", 3, 2400),
-            ]
-            total = 0
-            for name, qty, price in items:
-                subtotal = qty * price
-                total += subtotal
-                line = f"{name:<12}{qty:>3}x{price:>6} = {subtotal:>7}"
+            total_price = 0
+            total_weight = 0
+
+            for name, weight, price in items:
+                subtotal = int(weight*price)
+                total_price += subtotal
+                total_weight += weight
+                line = f"{name:<12}{weight:>4}x{int(price):>5} = {subtotal:>7}"
                 data += self.escpos_text(line)
 
             data += self.escpos_text("--------------------------------")
-            
-            data += self.escpos_text(f"TOTAL: Rp {total:,.0f}", align="right", bold=True)
+            data += self.escpos_text(f"JUMLAH SAK    : {item_count:,.0f}", align="left", bold=True)
+            data += self.escpos_text(f"BERAT TOTAL   : {total_weight:,.0f}Kg", align="left", bold=True)
+            data += self.escpos_text(f"ONGKOS TENAGA : Rp {manpower:,.0f}", align="left", bold=True)
+
+            data += self.escpos_text(f" ",  align="left", bold=False)
+
+            data += self.escpos_text(f"HARGA         : Rp {total_price:,.0f}", align="left", bold=True)
+            data += self.escpos_text(f"HARGA TOTAL   : Rp {total_price-manpower:,.0f}", align="left", bold=True)
             data += self.escpos_text("--------------------------------")
 
             # Footer
             data += self.escpos_text("Terima kasih!", align="center")
-            data += self.escpos_text("Dari Bumi Untuk Masyarakat", align="center")
+            data += self.escpos_text("-Dari Bumi Untuk Masyarakat-", align="center")
 
             # Feed and cut
             data += b"\n\n\n" + self.gs + b"V" + b"\x00"
@@ -93,6 +92,4 @@ class printer:
 
             print("✅ Struk berhasil dicetak.")
 
-if __name__ == "__main__":
-    #print_receipt()
-    pass
+MyPrinter = Printer(ESC, GS)

@@ -13,9 +13,9 @@ class API_Service:
     def __init__(self):
         self.creds = None
 
-        self.load_saved_token()
-        self.check_credentials()
-        self.api_connect()
+        # self.load_saved_token()
+        # self.check_credentials()
+        # self.api_connect()
 
     def load_saved_token(self):
         if os.path.exists('token.pkl'):
